@@ -32,7 +32,7 @@ const PORT = 4000;
 var app = express();
 
 app.use(
-  "/graphql",
+  "/api/graphql",
   graphqlHTTP({
     schema: schema,
     graphiql: { subscriptionEndpoint: `ws://localhost:${PORT}/subscriptions` },
