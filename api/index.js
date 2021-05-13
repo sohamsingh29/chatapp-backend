@@ -55,4 +55,4 @@ ws.listen(PORT, () => {
     }
   );
 });
-module.exports = app;
+module.exports = ws;
