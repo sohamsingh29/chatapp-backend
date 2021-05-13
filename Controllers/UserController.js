@@ -32,7 +32,6 @@ exports.userLogin = async ({ email, password }) => {
 };
 
 exports.searchUser = async ({ email }) => {
-  console.log(email);
   try {
     const user = await User.findOne({ email });
     if (!user) {
