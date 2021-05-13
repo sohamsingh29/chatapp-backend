@@ -38,7 +38,7 @@ app.use(
     graphiql: { subscriptionEndpoint: `ws://localhost:${PORT}/subscriptions` },
   })
 );
-
+app.get("/api/", (req, res) => res.send("hello"));
 const ws = createServer(app);
 
 ws.listen(PORT, () => {
