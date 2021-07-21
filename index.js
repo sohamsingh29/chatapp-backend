@@ -15,7 +15,7 @@ const cors = require("cors");
 const httpServer = require("http").createServer(app);
 const io = require("socket.io")(httpServer, options);
 const mongoose = require("mongoose");
-
+const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
@@ -92,6 +92,6 @@ io.on("connection", (socket) => {
   });
 });
 
-httpServer.listen(3000, () =>
-  console.log("server running on http://localhost:3000")
+httpServer.listen(PORT, () =>
+  console.log(`server running on http://localhost:${PORT}`)
 );
