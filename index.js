@@ -1,46 +1,97 @@
-const { ApolloServer, PubSub } = require("apollo-server");
-const pubsub = new PubSub();
-const typeDefs = require("./GraphQl/typeDef");
-const resolvers = require("./GraphQl/Resolver");
-const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
+const options = {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+};
+
 require("dotenv").config();
+const { MessageStore } = require("./stores/messageStore");
+const { OnlineStore } = require("./stores/onlineStore");
+const userModel = require("./models/userModel");
+const express = require("express");
+const app = express();
+const cors = require("cors");
+const httpServer = require("http").createServer(app);
+const io = require("socket.io")(httpServer, options);
+const mongoose = require("mongoose");
+
+app.use(cors());
+app.use(express.json());
+
 mongoose.connect(process.env.MONGOURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-mongoose.connection.on("connected", () => {
-  console.log("connected to mongodb");
-});
-mongoose.connection.on("error", () => {
-  console.log("unable to connect to mongodb");
-});
-const server = new ApolloServer({
-  introspection: true,
-  subscriptions: {
-    onConnect: () => console.log("user connected"),
-  },
-  typeDefs,
-  resolvers,
-  context: async (context) => {
-    let token;
-    if (context.req && context.req.headers.authorization) {
-      token = context.req.headers.authorization;
-    } else if (context.connection && context.connection.context.Authorization) {
-      token = context.connection.context.Authorization;
+
+const onlineUsers = new OnlineStore();
+const messagesQueue = new MessageStore();
+
+app.post("/login", async (req, res) => {
+  try {
+    let userData = req.body;
+    console.log(userData);
+    const exists = await userModel.find({ phone: userData.phone });
+    if (exists) {
+      return res.status(200).json({ message: "Logged In Successfully!" });
     }
-    if (token) {
-      const { userId } = await jwt.verify(
-        authorization,
-        process.env.SECRET_KEY
-      );
-      context.userId = userId;
-    }
-    context.pubsub = pubsub;
-    return context;
-  },
+    const newUser = new userModel(userData);
+    await newUser.save();
+    return res.status(200).json({ message: "Logged In Successfully!" });
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Something's Wrong!" });
+  }
 });
 
-server.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
+app.get("/user/:id", async (req, res) => {
+  try {
+    const uid = req.params.id;
+    const user = await userModel.findById(uid);
+    return res.status(200).json({ user });
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Something's Worng!" });
+  }
 });
+
+app.post("/getContacts", async (req, res) => {
+  try {
+    const data = req.body;
+    const users = await userModel.find({ phone: { $in: data.phoneNumbers } });
+    return res.status(200).json({ users });
+  } catch (e) {
+    return res.status(500).json({ error: true, message: "Something's Worng!" });
+  }
+});
+
+io.use((socket, next) => {
+  const phone = socket.handshake.auth.phone;
+  socket.phone = phone;
+  next();
+});
+
+io.on("connection", (socket) => {
+  socket.join(socket.phone);
+  onlineUsers.onOnline(socket.phone);
+  while (
+    onlineUsers.isOnline(socket.phone) &&
+    messagesQueue.hasMessage(socket.phone)
+  ) {
+    socket.emit("new message", messagesQueue.getMessage(socket.phone));
+  }
+
+  socket.on("send message", (message) => {
+    if (onlineUsers.isOnline(message.to)) {
+      socket.to(message.to).to(socket.phone).emit("new message", message);
+    } else {
+      messagesQueue.putMessage(message);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    onlineUsers.onOffline(socket.phone);
+  });
+});
+
+httpServer.listen(3000, () =>
+  console.log("server running on http://localhost:3000")
+);
