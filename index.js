@@ -31,7 +31,7 @@ app.post("/login", async (req, res) => {
   try {
     let userData = req.body;
     console.log(userData);
-    const exists = await userModel.find({ phone: userData.phone });
+    const exists = await userModel.findOne({ phone: userData.phone });
     if (exists) {
       return res.status(200).json({ message: "Logged In Successfully!" });
     }

@@ -9,4 +9,4 @@ const userSchema = new Schema({
   image: { type: String, default: "", require: false },
 });
 
-module.exports = new mongoose.model("user", userSchema);
+module.exports = mongoose.model("user", userSchema);
