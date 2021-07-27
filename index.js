@@ -33,11 +33,15 @@ app.post("/login", async (req, res) => {
     console.log(userData);
     const exists = await userModel.findOne({ phone: userData.phone });
     if (exists) {
-      return res.status(200).json({ message: "Logged In Successfully!" });
+      return res
+        .status(200)
+        .json({ message: "Logged In Successfully!", userData: exists });
     }
     const newUser = new userModel(userData);
-    await newUser.save();
-    return res.status(200).json({ message: "Logged In Successfully!" });
+    const newUserData = await newUser.save();
+    return res
+      .status(200)
+      .json({ message: "Logged In Successfully!", userData: newUserData });
   } catch (error) {
     return res.status(500).json({ error: true, message: "Something's Wrong!" });
   }
