@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
     if (onlineUsers.isOnline(message.to)) {
       socket.to(message.to).to(socket._id).emit("new message", message);
     } else {
+      socket.to(socket._id).emit("new message", message);
       messagesQueue.putMessage(message);
     }
   });
