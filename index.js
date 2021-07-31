@@ -68,31 +68,31 @@ app.post("/getContacts", async (req, res) => {
 });
 
 io.use((socket, next) => {
-  const phone = socket.handshake.auth.phone;
-  socket.phone = phone;
+  const id = socket.handshake.auth.id;
+  socket.id = id;
   next();
 });
 
 io.on("connection", (socket) => {
-  socket.join(socket.phone);
-  onlineUsers.onOnline(socket.phone);
+  socket.join(socket.id);
+  onlineUsers.onOnline(socket.id);
   while (
-    onlineUsers.isOnline(socket.phone) &&
-    messagesQueue.hasMessage(socket.phone)
+    onlineUsers.isOnline(socket.id) &&
+    messagesQueue.hasMessage(socket.id)
   ) {
-    socket.emit("new message", messagesQueue.getMessage(socket.phone));
+    socket.emit("new message", messagesQueue.getMessage(socket.id));
   }
 
   socket.on("send message", (message) => {
     if (onlineUsers.isOnline(message.to)) {
-      socket.to(message.to).to(socket.phone).emit("new message", message);
+      socket.to(message.to).to(socket.id).emit("new message", message);
     } else {
       messagesQueue.putMessage(message);
     }
   });
 
   socket.on("disconnect", () => {
-    onlineUsers.onOffline(socket.phone);
+    onlineUsers.onOffline(socket.id);
   });
 });
 
