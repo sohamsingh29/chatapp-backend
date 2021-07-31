@@ -89,7 +89,8 @@ io.on("connection", (socket) => {
       socket.to(message.to).to(socket._id).emit("new message", message);
     } else {
       console.log(message, "else");
-      socket.to(socket._id).emit("new message", message);
+      io.to(socket._id).emit("new message", message);
+      // socket.to(socket._id).emit("new message", message);
       messagesQueue.putMessage(message);
     }
   });
