@@ -84,10 +84,11 @@ io.on("connection", (socket) => {
   }
 
   socket.on("send message", (message) => {
-    console.log(message);
     if (onlineUsers.isOnline(message.to)) {
+      console.log(message);
       socket.to(message.to).to(socket._id).emit("new message", message);
     } else {
+      console.log(message, "else");
       socket.to(socket._id).emit("new message", message);
       messagesQueue.putMessage(message);
     }
