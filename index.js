@@ -84,6 +84,7 @@ io.on("connection", (socket) => {
   }
 
   socket.on("send message", (message) => {
+    console.log(message);
     if (onlineUsers.isOnline(message.to)) {
       socket.to(message.to).to(socket._id).emit("new message", message);
     } else {
